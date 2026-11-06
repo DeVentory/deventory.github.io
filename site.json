@@ -1,5 +1,33 @@
 {
   "velog_user": "cahill20012002",
   "default_category": "study",
-  "pinned": ["hello-blog"]
+  "pinned": [
+    "hello-blog"
+  ],
+  "overrides": {
+    "https://velog.io/@cahill20012002/다운로드-폴더를-한-번에-정리하고-되돌리기까지-첫-맥-앱-만들기": {
+      "category": "project",
+      "tags": [
+        "macos",
+        "swift",
+        "python"
+      ]
+    },
+    "https://velog.io/@cahill20012002/시험-D-day를-메뉴바에서-1초-단위로-시험-레이더-만들기": {
+      "category": "project",
+      "tags": [
+        "macos",
+        "swiftui",
+        "eventkit"
+      ]
+    },
+    "https://velog.io/@cahill20012002/영상음성-받아쓰기-mlx-whisper로-만든-맥-앱": {
+      "category": "project",
+      "tags": [
+        "macos",
+        "swiftui",
+        "whisper"
+      ]
+    }
+  }
 }

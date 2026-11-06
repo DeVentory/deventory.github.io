@@ -6,7 +6,7 @@
 
 - **Velog 글**: [Velog](https://velog.io/@cahill20012002)에 쓰면 됩니다. 이 사이트는 빌드할 때 Velog RSS를 받아 마크다운으로 바꿔 쪽지로 보여 주고, 카드에 `Velog` 표시와 원문 링크를 붙입니다.
   - 매일 06:17(한국 시간)에 자동으로 다시 빌드합니다. 바로 반영하려면 GitHub의 Actions 탭에서 `Deploy Pages`를 수동 실행하세요.
-  - Velog 글의 카테고리는 태그에 `study`, `project`, `security` 중 하나를 달면 그 카테고리로 들어가고, 없으면 `site.json`의 기본값(`study`)이 됩니다.
+  - Velog RSS에는 태그 정보가 없어서, 카테고리는 `site.json`의 `overrides`에 글 주소(퍼센트 인코딩을 푼 형태)와 카테고리·태그를 적어 정합니다. 적지 않은 글은 기본값(`study`)이 됩니다.
   - Velog를 받지 못하면 배포가 실패하고 이전 사이트가 그대로 유지됩니다.
 - **사이트 전용 글**: `posts/이름.md`에 아래 머리말과 함께 씁니다. 같은 제목의 Velog 글이 있으면 Velog 쪽이 우선합니다.
 

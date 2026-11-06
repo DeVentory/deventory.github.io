@@ -6,7 +6,7 @@
   python3 build.py --require-velog  # Velog 를 못 받으면 실패 (배포 자동화용: 이전 배포를 지키기 위해)
   python3 build.py --no-velog       # 네트워크 없이 md 글만
 """
-import argparse, datetime, email.utils, hashlib, json, pathlib, re, sys, urllib.request
+import argparse, datetime, email.utils, hashlib, json, pathlib, re, sys, urllib.parse, urllib.request
 import xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 
@@ -150,7 +150,8 @@ def slugify(text):
     return re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:48]
 
 
-def fetch_velog(user, default_cat):
+def fetch_velog(user, default_cat, overrides=None):
+    overrides = overrides or {}
     url = f"https://api.velog.io/rss/@{user}"
     req = urllib.request.Request(url, headers={"User-Agent": "tech-blog-build/1.0"})
     with urllib.request.urlopen(req, timeout=30) as r:
@@ -171,13 +172,17 @@ def fetch_velog(user, default_cat):
             date = dt.strftime("%Y-%m-%d")
         except Exception:
             date = ""
-        tail = link.rstrip("/").rsplit("/", 1)[-1]
+        tail = urllib.parse.unquote(link.rstrip("/").rsplit("/", 1)[-1])   # 퍼센트 인코딩을 풀어야 한글 글도 주소 이름이 맞게 나온다
         slug = "velog-" + (slugify(tail) or hashlib.sha1(link.encode()).hexdigest()[:8])
         while slug in seen:
             slug += "-" + hashlib.sha1(link.encode()).hexdigest()[:4]
         seen.add(slug)
+        # Velog RSS에는 태그가 없어서, site.json 의 overrides(주소→카테고리·태그)로 분류한다
+        ov = overrides.get(urllib.parse.unquote(link), {})
+        cat = ov.get("category", cat)
+        tags = [t for t in ov.get("tags", tags) if t not in CATEGORIES]
         posts.append({"slug": slug, "title": title, "date": date, "category": cat,
-                      "tags": tags + ["velog"], "pinned": False,
+                      "tags": tags + ["velog"], "pinned": bool(ov.get("pinned", False)),
                       "body": html_to_md(it.findtext("description") or ""),
                       "source": "velog", "url": link})
     return posts
@@ -215,7 +220,7 @@ def main():
 
     if not args.no_velog and site.get("velog_user"):
         try:
-            vel = fetch_velog(site["velog_user"], site.get("default_category", "study"))
+            vel = fetch_velog(site["velog_user"], site.get("default_category", "study"), site.get("overrides"))
             titles = {p["title"] for p in vel}
             dropped = [p for p in posts if p["title"] in titles]
             posts = [p for p in posts if p["title"] not in titles]   # 같은 제목이면 Velog 쪽이 우선
