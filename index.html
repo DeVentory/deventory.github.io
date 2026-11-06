@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'sha256-9zy2ZkyvywsVZYUnu/ICpnKe6VHiWDqDtGM8DFaEC2I='; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src https://api.github.com; base-uri 'none'; form-action 'none'">
+<title>DeVentory의 책상</title>
+<meta name="description" content="공부한 것과 만든 것을 적어 둔 개발 블로그">
+<script>
+/* 첫 페인트 전에 테마를 정해 깜빡임을 막는다 */
+(function () {
+  var t = null;
+  try { t = localStorage.getItem("theme"); } catch (e) {}
+  if (t !== "light" && t !== "dark") t = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", t);
+})();
+</script>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="desk" class="desk">
+  <header class="top">
+    <div class="top__bar">
+      <p class="top__eyebrow">🗂️ DeVentory</p>
+      <button id="themeBtn" class="switch" type="button" role="switch" aria-checked="false" aria-label="다크 모드">
+        <span class="switch__icon" aria-hidden="true">☀️</span>
+        <span class="switch__track" aria-hidden="true"><span class="switch__thumb"></span></span>
+        <span class="switch__icon" aria-hidden="true">🌙</span>
+      </button>
+    </div>
+    <h1 class="top__title">DeVentory의 책상</h1>
+    <p class="top__lead">공부한 것, 만든 것, 막혔다가 풀어낸 것을 메모처럼 적어 둔 곳이에요. 마음에 드는 쪽지를 눌러 읽어 보세요.</p>
+    <div class="toolbar">
+      <div id="chips" class="chips" role="group" aria-label="카테고리"></div>
+      <label class="search"><span class="sr-only">글 검색</span>
+        <input id="q" type="search" placeholder="🔎 제목·태그 검색" autocomplete="off">
+      </label>
+    </div>
+  </header>
+
+  <main>
+    <p id="count" class="count" aria-live="polite"></p>
+    <div id="grid" class="grid"></div>
+  </main>
+
+  <footer class="foot">
+    <button id="termBtn" class="btn btn--ghost" type="button">⌨️ 터미널로 보기</button>
+    <span class="foot__hint">키보드의 <kbd>`</kbd> 키로도 열려요</span>
+    <button id="manageBtn" class="btn btn--ghost foot__manage" type="button">🔑 관리</button>
+  </footer>
+</div>
+
+<div id="reader" class="reader" role="dialog" aria-modal="true" aria-labelledby="paperTitle" hidden>
+  <div class="reader__scroll">
+    <article class="paper">
+      <div class="paper__bar">
+        <button id="readerClose" class="btn paper__close" type="button">← 책상으로 <span class="kbd-hint">Esc</span></button>
+        <div id="ownerTools" class="owner-tools" hidden>
+          <button id="toolEdit" class="btn" type="button">✏️ 수정</button>
+          <button id="toolPin" class="btn" type="button">📌 고정</button>
+          <button id="toolDelete" class="btn btn--danger" type="button">🗑️ 삭제</button>
+        </div>
+      </div>
+      <div id="paperBody" class="prose"></div>
+    </article>
+  </div>
+</div>
+
+<button id="writeFab" class="fab" type="button" hidden aria-label="새 글 쓰기">✏️ <span>글쓰기</span></button>
+<p id="toast" class="toast" role="status" hidden></p>
+
+<dialog id="authDlg" class="dlg" aria-labelledby="authHeading">
+  <form id="authForm" method="dialog" class="dlg__body">
+    <h2 id="authHeading">🔑 관리</h2>
+    <div id="authLoggedOut">
+      <p class="dlg__help">글을 쓰려면 이 저장소에만 쓸 수 있는 GitHub 토큰이 필요해요. 토큰은 이 기기의 브라우저에만 저장되고 GitHub 외에는 어디로도 보내지 않아요.</p>
+      <label class="field"><span>GitHub 토큰</span>
+        <input id="authToken" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…">
+      </label>
+    </div>
+    <div id="authLoggedIn" hidden>
+      <p class="dlg__help">✅ 로그인되어 있어요. 이 기기에서 글을 쓰고 고칠 수 있어요.</p>
+    </div>
+    <p id="authMsg" class="dlg__msg" role="status"></p>
+    <div class="dlg__actions">
+      <button id="authCancel" class="btn" type="button">닫기</button>
+      <button id="authLogout" class="btn btn--danger" type="button">로그아웃</button>
+      <button class="btn btn--primary" type="submit">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="editor" class="dlg dlg--editor" aria-labelledby="edHeading">
+  <form id="edForm" method="dialog" class="dlg__body">
+    <h2 id="edHeading">✏️ 새 글</h2>
+    <label class="field"><span>제목</span><input id="edTitle" type="text" autocomplete="off"></label>
+    <div class="field-row">
+      <label class="field"><span>카테고리</span><select id="edCategory"></select></label>
+      <label class="field"><span>날짜</span><input id="edDate" type="date"></label>
+    </div>
+    <label class="field"><span>태그 (쉼표로 구분)</span><input id="edTags" type="text" autocomplete="off" placeholder="java, 소켓"></label>
+    <div class="field-row">
+      <label class="field"><span>주소 이름 (비우면 자동)</span><input id="edSlug" type="text" autocomplete="off" autocapitalize="off" placeholder="my-first-post"></label>
+      <label class="check"><input id="edPinned" type="checkbox"> 📌 맨 위에 고정</label>
+    </div>
+    <div class="tabs" role="tablist">
+      <button id="edTabEdit" class="tab" type="button" role="tab" aria-selected="true">쓰기</button>
+      <button id="edTabPreview" class="tab" type="button" role="tab" aria-selected="false">미리보기</button>
+    </div>
+    <div id="edTools" class="md-tools">
+      <button type="button" class="btn" data-ins="h" aria-label="제목">H</button>
+      <button type="button" class="btn" data-ins="b" aria-label="굵게"><b>B</b></button>
+      <button type="button" class="btn" data-ins="c" aria-label="인라인 코드">&lt;/&gt;</button>
+      <button type="button" class="btn" data-ins="f" aria-label="코드 블록">{ }</button>
+      <button type="button" class="btn" data-ins="l" aria-label="목록">• 목록</button>
+      <button type="button" class="btn" data-ins="q" aria-label="인용">❝</button>
+    </div>
+    <textarea id="edBody" class="ed-body" spellcheck="false" placeholder="마크다운으로 써요. 제목은 # 로 시작해요."></textarea>
+    <div id="edPreview" class="prose ed-preview" hidden></div>
+    <p id="edMsg" class="dlg__msg" role="status"></p>
+    <div class="dlg__actions">
+      <button id="edCancel" class="btn" type="button">닫기</button>
+      <button id="edSave" class="btn btn--primary" type="submit">발행</button>
+    </div>
+  </form>
+</dialog>
+
+<section id="term" class="term" role="dialog" aria-modal="true" aria-label="터미널" hidden>
+  <div class="term__bar">
+    <span>⌨️ guest@deventory</span>
+    <span class="term__esc">Esc로 닫기</span>
+    <button id="termClose" class="term__x" type="button" aria-label="터미널 닫기">✕</button>
+  </div>
+  <div id="termScroll" class="term__scroll">
+    <div id="out" aria-live="polite"></div>
+    <form id="form" autocomplete="off">
+      <label id="prompt" for="cmd"></label>
+      <input id="cmd" type="text" spellcheck="false" autocapitalize="off" autocorrect="off" aria-label="명령어 입력">
+    </form>
+  </div>
+</section>
+
+<script src="posts.js"></script>
+<script src="lib.js"></script>
+<script src="terminal.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+<script src="owner.js"></script>
+</body>
+</html>
